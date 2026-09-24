@@ -2,7 +2,8 @@
 
 namespace threads_exercise {
 
-Scheduler::Scheduler(size_t numWorkers) {
+Scheduler::Scheduler(size_t numWorkers, std::chrono::steady_clock::duration cleanupTimeout)
+    : timeout(std::chrono::steady_clock::now() + cleanupTimeout) {
     
     for(int i{0}; i < numWorkers; i++) {
         workers.push_back(std::thread(&Scheduler::worker, this));
@@ -24,9 +25,7 @@ void Scheduler::worker() {
         {
             std::unique_lock<std::mutex> lock(m);
 
-            cv.wait(lock, [this]{ return !taskQueue.empty() || !currRunning; });
-
-            if(taskQueue.empty() && !currRunning) return;
+            if(!cv.wait_until(lock, timeout, [this] { return !taskQueue.empty(); })) return;
 
             currTask = std::move(taskQueue.front());
             taskQueue.pop();
@@ -37,11 +36,6 @@ void Scheduler::worker() {
 }
 
 Scheduler::~Scheduler() {
-    {
-        std::unique_lock<std::mutex> lock(m);
-        currRunning = false;
-        cv.notify_all();
-    }
     
     for(size_t i{0}; i < workers.size(); i++) {
         workers[i].join();

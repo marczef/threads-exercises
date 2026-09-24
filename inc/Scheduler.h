@@ -24,7 +24,7 @@ public:
     using TaskKey = std::string;
     using Task = std::function<void()>;
 
-    Scheduler(size_t numWorkers);
+    Scheduler(size_t numWorkers, std::chrono::steady_clock::duration cleanupTimeout);
     ~Scheduler();
 
     void schedule(Task&& task);
@@ -34,7 +34,7 @@ private:
     std::mutex m;
     std::condition_variable cv;
     std::queue<std::unique_ptr<Task>> taskQueue;
-    bool currRunning = true;
+    std::chrono::steady_clock::time_point timeout;
 
     void worker();
 };
