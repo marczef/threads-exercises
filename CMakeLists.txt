@@ -9,6 +9,7 @@ include_directories(inc)
 add_executable(main
 	src/main.cc
 	src/ProducerConsumer.cc
+	src/Scheduler.cc
 )
 
 find_package(Threads REQUIRED)
